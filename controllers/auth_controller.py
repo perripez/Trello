@@ -4,6 +4,7 @@ from flask import Blueprint, request
 
 from models.user import User, user_schema, UserSchema
 from init import bcrypt, db
+from utils.utils import auth_as_admin_decorator
 
 from sqlalchemy.exc import IntegrityError
 from psycopg2 import errorcodes
@@ -82,3 +83,22 @@ def update_user():
     else:
         # return an error response
         return "The user does not exist"
+    
+        
+# /auth/users/user_id
+@auth_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@jwt_required()
+@auth_as_admin_decorator
+def delete_user(user_id):
+    # find the user with the id from the db
+    stmt = db.select(User).filter_by(id=user_id)
+    user = db.session.scalar(stmt)
+    # if exists, delete the user
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+    # retuen an acknowledgement message
+        return {"message": f"User with id {user_id} is deleted."}
+    # else, return erro message
+    else:
+        return {"error": f"User with id {user_id} not found"}, 404

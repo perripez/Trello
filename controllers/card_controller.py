@@ -7,7 +7,7 @@ from models.card import Card, card_schema, cards_schema
 
 from controllers.comment_controller import comments_bp
 
-from utils.utils import authorise_as_admin
+from utils.utils import auth_as_admin_decorator
 
 cards_bp = Blueprint("cards", __name__, url_prefix="/cards")
 cards_bp.register_blueprint(comments_bp)
@@ -32,6 +32,7 @@ def get_a_card(card_id):
 # /cards - POST: Create a new card
 @cards_bp.route("/", methods=["POST"])
 @jwt_required()
+@auth_as_admin_decorator
 def create_card():
     # get the data from the body of the request
     body_data = card_schema.load(request.get_json())
@@ -53,9 +54,10 @@ def create_card():
 # /cards/<id> - DELETE: Delete a card
 @cards_bp.route("/<int:card_id>", methods=["DELETE"])
 @jwt_required()
+@auth_as_admin_decorator
 def delete_card(card_id):
     #check whether user is admin or not
-    is_admin = authorise_as_admin()
+    # is_admin = authorise_as_admin()
     # if not admin, return error message
     if not is_admin:
         return {"error": "User is not authorised to perform this action"}
@@ -75,6 +77,7 @@ def delete_card(card_id):
 # /cards/<id> - PUT, PATCH: Edit a card entry
 @cards_bp.route("/<int:card_id>", methods=["PATCH","PUT"])
 @jwt_required()
+@auth_as_admin_decorator
 def update_card(card_id):
     # get the info from the body of the request
     body_data = card_schema.load(request.get_json(), partial=True)
@@ -82,7 +85,7 @@ def update_card(card_id):
     stmt = db.select(Card).filter_by(id=card_id)
     card = db.session.scalar(stmt)
     # check if the user is admin or not
-    is_admin = authorise_as_admin()
+    # is_admin = authorise_as_admin()
     
     # if the card exists, update the fields as required + return acknowledgement
     if card:
